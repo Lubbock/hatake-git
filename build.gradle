@@ -1,0 +1,65 @@
+buildscript {
+    repositories {
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        maven { url = 'http://repo.maven.apache.org/maven2' }
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.anarres.gradle:gradle-velocity-plugin:1.0.0")
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE'
+    }
+}
+plugins {
+    id 'java'
+    id 'application'
+}
+apply plugin: 'idea'
+apply plugin: 'velocity'
+apply plugin: 'java'
+group 'com.lame.hatake.hgit'
+version '0.1'
+// 指定JDK版本
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+repositories {
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+    jcenter()
+    maven { url = 'http://repo.maven.apache.org/maven2' }
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+}
+mainClassName = 'com.lame.hatake.hgit.Hgit'
+application {
+    mainClass = 'com.lame.hatake.hgit.Hgit'
+}
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.lame.hatake.hgit.Hgit'
+    }
+}
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+// 指定编码格式
+[compileJava,compileTestJava,javadoc]*.options*.encoding = 'UTF-8'
+
+//清除上次的编译过的文件
+task clearPj(type: Delete) {
+    delete 'build', 'target'
+}
+task copyJar(type: Copy) {
+    from configurations.runtime
+    into('build/libs/libs')
+}
+//把JAR复制到目标目录
+task release(type: Copy, dependsOn: [build, copyJar]) {
+}
