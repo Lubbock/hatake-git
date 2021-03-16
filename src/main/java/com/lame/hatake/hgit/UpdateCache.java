@@ -25,46 +25,33 @@ import java.util.List;
  * <p> update Cache 生成index 文件</p>
  **/
 public class UpdateCache {
-    static String indexPath = ".hit/.dirache/";
-
-    static String cachePath = ".hit/temp/";
-
-    static String objPath = ".hit/objects/";
-
-    static String lock = "index.lock";
-
-    static String indexfile = "index";
 
     static byte[] SIGNATURE = new byte[]{'D', 'I', 'R', 'C'};
 
-    static int FILE_HEADER = 32;
-
-    static int version = 1;
-
     public void releaseLock() {
-        new File(indexPath, lock).delete();
+        new File(SysConstant.indexPath, SysConstant.lock).delete();
     }
 
     public void addLock() throws Exception {
-        new File(indexPath, lock).createNewFile();
+        new File(SysConstant.indexPath, SysConstant.lock).createNewFile();
     }
 
     public static boolean isLock() {
-        return new File(indexPath, indexPath).exists();
+        return new File(SysConstant.indexPath, SysConstant.indexPath).exists();
     }
 
     public static void initIndex() throws Exception {
-        File cp = new File(cachePath);
+        File cp = new File(SysConstant.cachePath);
         if (!cp.exists()) {
             cp.mkdirs();
         }
-        File f = new File(indexPath, indexfile);
+        File f = new File(SysConstant.indexPath, SysConstant.indexfile);
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
             raf.write(SIGNATURE);
-            raf.writeInt(version);// 版本号
+            raf.writeInt(SysConstant.version);// 版本号
             raf.writeInt(0);
         }
-        String sha1 = FingerprintUtils.calcFileFingerprint(new File(indexPath, indexfile), FingerprintUtils.SHA1);
+        String sha1 = FingerprintUtils.calcFileFingerprint(new File(SysConstant.indexPath, SysConstant.indexfile), FingerprintUtils.SHA1);
 
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
             raf.seek(12);
@@ -78,7 +65,7 @@ public class UpdateCache {
         if (isLock()) {
             throw new RuntimeException("存储库正在被使用");
         }
-        File f = new File(indexPath, indexfile);
+        File f = new File(SysConstant.indexPath, SysConstant.indexfile);
         if (!f.exists()) {
             initIndex();
         }
@@ -102,7 +89,7 @@ public class UpdateCache {
         }
         String sha1 = FingerprintUtils.calcFileFingerprint(f, FingerprintUtils.SHA1);
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
-            raf.seek(FILE_HEADER);
+            raf.seek(SysConstant.FILE_HEADER);
             raf.write(HexToByteUtils.hexToByte(sha1));
             raf.seek(8);// 到entry 位置
             int oldEntry = raf.readInt();
@@ -161,7 +148,7 @@ public class UpdateCache {
 
     public static void createBlob(File f, String sha1) throws Exception {
         try (FileInputStream fis = new FileInputStream(f);
-             RandomAccessFile raf = new RandomAccessFile(new File(indexPath, sha1), "rw")) {
+             RandomAccessFile raf = new RandomAccessFile(new File(SysConstant.indexPath, sha1), "rw")) {
             raf.write(new byte[]{'b', 'l', 'o', 'b'});
             raf.writeLong(f.length());
             byte[] bt = new byte[1024];
@@ -170,17 +157,17 @@ public class UpdateCache {
             }
         }
 
-        File waitYs = new File(indexPath, sha1);
+        File waitYs = new File(SysConstant.indexPath, sha1);
         System.out.println(sha1);
-        ZipUtil.archiveFiles2Zip(new File[]{waitYs}, new File(objPath + File.separator + sha1.substring(0, 2), sha1), true);
+        ZipUtil.archiveFiles2Zip(new File[]{waitYs}, new File(SysConstant.objPath + File.separator + sha1.substring(0, 2), sha1), true);
     }
 
     public static File extractBlob(File file) throws Exception {
         String sha1 = file.getName();
-        ZipUtil.decompressZip2Files(file, new File(cachePath));
+        ZipUtil.decompressZip2Files(file, new File(SysConstant.cachePath));
         try (
-                RandomAccessFile raf = new RandomAccessFile(new File(cachePath, sha1), "rw");
-                FileOutputStream fos = new FileOutputStream(new File(cachePath, sha1 + "_temp"))
+                RandomAccessFile raf = new RandomAccessFile(new File(SysConstant.cachePath, sha1), "rw");
+                FileOutputStream fos = new FileOutputStream(new File(SysConstant.cachePath, sha1 + "_temp"))
         ) {
             raf.seek(12);
             byte[] bt = new byte[1024];
@@ -188,16 +175,16 @@ public class UpdateCache {
                 fos.write(bt);
             }
         }
-        File tempFile = new File(cachePath, sha1);
+        File tempFile = new File(SysConstant.cachePath, sha1);
         if (tempFile.exists()) {
             tempFile.delete();
         }
-        return new File(cachePath, sha1 + "_temp");
+        return new File(SysConstant.cachePath, sha1 + "_temp");
     }
 
 
     public static void readIndex() throws Exception {
-        File f = new File(indexPath, indexfile);
+        File f = new File(SysConstant.indexPath, SysConstant.indexfile);
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
             byte[] signature = new byte[4];
             raf.read(signature);
@@ -233,6 +220,6 @@ public class UpdateCache {
     public static void main(String[] args) throws Exception {
 //        List<ModifierFile> modifierFiles = productModifierFile("/media/lame/0DD80F300DD80F30/code/hatake-git");
 //        writeIndex(modifierFiles);
-//        readIndex();
+        readIndex();
     }
 }
