@@ -27,6 +27,8 @@ import java.util.List;
 public class UpdateCache {
     static String indexPath = ".hit/.dirache/";
 
+    static String cachePath = ".hit/temp/";
+
     static String objPath = ".hit/objects/";
 
     static String lock = "index.lock";
@@ -52,6 +54,10 @@ public class UpdateCache {
     }
 
     public static void initIndex() throws Exception {
+        File cp = new File(cachePath);
+        if (!cp.exists()) {
+            cp.mkdirs();
+        }
         File f = new File(indexPath, indexfile);
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
             raf.write(SIGNATURE);
@@ -169,13 +175,12 @@ public class UpdateCache {
         ZipUtil.archiveFiles2Zip(new File[]{waitYs}, new File(objPath + File.separator + sha1.substring(0, 2), sha1), true);
     }
 
-    public static void extractBlob() throws Exception {
-        String sha1 = "da76d45abec388ac1ddad7205567d56fc4d30c5e";
-        File file = new File(objPath + File.separator + "da", sha1);
-        ZipUtil.decompressZip2Files(file, new File(indexPath));
+    public static File extractBlob(File file) throws Exception {
+        String sha1 = file.getName();
+        ZipUtil.decompressZip2Files(file, new File(cachePath));
         try (
-                RandomAccessFile raf = new RandomAccessFile(new File(indexPath, sha1), "rw");
-                FileOutputStream fos = new FileOutputStream(new File(indexPath, "tt.gradle"))
+                RandomAccessFile raf = new RandomAccessFile(new File(cachePath, sha1), "rw");
+                FileOutputStream fos = new FileOutputStream(new File(cachePath, sha1 + "_temp"))
         ) {
             raf.seek(12);
             byte[] bt = new byte[1024];
@@ -183,6 +188,11 @@ public class UpdateCache {
                 fos.write(bt);
             }
         }
+        File tempFile = new File(cachePath, sha1);
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
+        return new File(cachePath, sha1 + "_temp");
     }
 
 
@@ -224,6 +234,5 @@ public class UpdateCache {
 //        List<ModifierFile> modifierFiles = productModifierFile("/media/lame/0DD80F300DD80F30/code/hatake-git");
 //        writeIndex(modifierFiles);
 //        readIndex();
-        extractBlob();
     }
 }
