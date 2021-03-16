@@ -15,6 +15,4 @@ public class ModifierFile {
     private String sha1;
     private short namelen;
     private String name = "";
-
-
 }

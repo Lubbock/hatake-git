@@ -38,6 +38,9 @@ dependencies {
     // https://mvnrepository.com/artifact/commons-io/commons-io
     compile group: 'commons-io', name: 'commons-io', version: '2.8.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-compress
+    implementation group: 'org.apache.commons', name: 'commons-compress', version: '1.20'
+
 }
 
 test {

@@ -8,6 +8,8 @@ public class Hgit {
         new File(".hit/.dirache/").mkdirs();
         File f = new File(".hit/.dirache/index");
         f.createNewFile();
+        UpdateCache.initIndex();
+        ObjectInit.initObject();
     }
 
     static void init() throws Exception {

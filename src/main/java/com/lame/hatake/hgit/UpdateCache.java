@@ -4,11 +4,14 @@ import com.lame.hatake.hgit.entry.ModifierFile;
 import com.lame.hatake.hgit.utils.FingerprintUtils;
 import com.lame.hatake.hgit.utils.FlowPrint;
 import com.lame.hatake.hgit.utils.HexToByteUtils;
+import com.lame.hatake.hgit.utils.ZipUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.NotFileFilter;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,6 +26,8 @@ import java.util.List;
  **/
 public class UpdateCache {
     static String indexPath = ".hit/.dirache/";
+
+    static String objPath = ".hit/objects/";
 
     static String lock = "index.lock";
 
@@ -142,10 +147,44 @@ public class UpdateCache {
             modifierFiles.add(mf);
             String fingerprint = FingerprintUtils.calcFileFingerprint(file, FingerprintUtils.SHA1);
             mf.setSha1(fingerprint);
+            createBlob(file, fingerprint);
         }
 //        modifierFiles.forEach(e -> System.out.println(e.toString()));
         return modifierFiles;
     }
+
+    public static void createBlob(File f, String sha1) throws Exception {
+        try (FileInputStream fis = new FileInputStream(f);
+             RandomAccessFile raf = new RandomAccessFile(new File(indexPath, sha1), "rw")) {
+            raf.write(new byte[]{'b', 'l', 'o', 'b'});
+            raf.writeLong(f.length());
+            byte[] bt = new byte[1024];
+            while (fis.read(bt) > -1) {
+                raf.write(bt);
+            }
+        }
+
+        File waitYs = new File(indexPath, sha1);
+        System.out.println(sha1);
+        ZipUtil.archiveFiles2Zip(new File[]{waitYs}, new File(objPath + File.separator + sha1.substring(0, 2), sha1), true);
+    }
+
+    public static void extractBlob() throws Exception {
+        String sha1 = "da76d45abec388ac1ddad7205567d56fc4d30c5e";
+        File file = new File(objPath + File.separator + "da", sha1);
+        ZipUtil.decompressZip2Files(file, new File(indexPath));
+        try (
+                RandomAccessFile raf = new RandomAccessFile(new File(indexPath, sha1), "rw");
+                FileOutputStream fos = new FileOutputStream(new File(indexPath, "tt.gradle"))
+        ) {
+            raf.seek(12);
+            byte[] bt = new byte[1024];
+            while (raf.read(bt) > -1) {
+                fos.write(bt);
+            }
+        }
+    }
+
 
     public static void readIndex() throws Exception {
         File f = new File(indexPath, indexfile);
@@ -182,8 +221,9 @@ public class UpdateCache {
     }
 
     public static void main(String[] args) throws Exception {
-        List<ModifierFile> modifierFiles = productModifierFile("/media/lame/0DD80F300DD80F30/code/hatake-git");
-        writeIndex(modifierFiles);
-        readIndex();
+//        List<ModifierFile> modifierFiles = productModifierFile("/media/lame/0DD80F300DD80F30/code/hatake-git");
+//        writeIndex(modifierFiles);
+//        readIndex();
+        extractBlob();
     }
 }
