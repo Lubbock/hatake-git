@@ -40,8 +40,13 @@ public class FingerprintUtils {
         }
 
         BigInteger bigInt = new BigInteger(1, digest.digest());
+        return fixTo40(bigInt);
+    }
+
+    private static String fixTo40(BigInteger bigInt) {
         StringBuilder s = new StringBuilder(bigInt.toString(16));
-        for (int j = 0; j < 40 - s.length(); j++) {
+        int length = s.length();
+        for (int j = 0; j < 40 - length; j++) {
             s.insert(0, "0");
         }
         return s.toString();
@@ -79,6 +84,5 @@ public class FingerprintUtils {
         }
         return pathAlgMap;
     }
-
 
 }

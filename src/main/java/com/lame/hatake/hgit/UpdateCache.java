@@ -2,6 +2,7 @@ package com.lame.hatake.hgit;
 
 import com.lame.hatake.hgit.entry.ModifierFile;
 import com.lame.hatake.hgit.utils.FingerprintUtils;
+import com.lame.hatake.hgit.utils.FlowPrint;
 import com.lame.hatake.hgit.utils.HexToByteUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -27,7 +28,7 @@ public class UpdateCache {
 
     static String indexfile = "index";
 
-    static String SIGNATURE = "DIRC";
+    static byte[] SIGNATURE = new byte[]{'D', 'I', 'R', 'C'};
 
     static int FILE_HEADER = 32;
 
@@ -48,7 +49,7 @@ public class UpdateCache {
     public static void initIndex() throws Exception {
         File f = new File(indexPath, indexfile);
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
-            raf.writeChars(SIGNATURE);
+            raf.write(SIGNATURE);
             raf.writeInt(version);// 版本号
             raf.writeInt(0);
         }
@@ -59,7 +60,6 @@ public class UpdateCache {
             byte[] fingerprint = HexToByteUtils.hexToByte(sha1);
             raf.write(fingerprint);
         }
-        System.out.println(f.length());
     }
 
 
@@ -93,10 +93,15 @@ public class UpdateCache {
         try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
             raf.seek(FILE_HEADER);
             raf.write(HexToByteUtils.hexToByte(sha1));
+            raf.seek(8);// 到entry 位置
+            int oldEntry = raf.readInt();
+            raf.seek(8);
+            oldEntry = oldEntry + modifierFiles.size();
+            raf.writeInt(oldEntry);
         }
     }
 
-    public static List<ModifierFile> productModifierFile(String fp)throws Exception {
+    public static List<ModifierFile> productModifierFile(String fp) throws Exception {
         NotFileFilter filter = new NotFileFilter(
                 FileFilterUtils.or(
                         FileFilterUtils.suffixFileFilter("gitignore"),
@@ -116,12 +121,12 @@ public class UpdateCache {
         for (File file : files) {
 //            Files.getFileStore(file.toPath).supportsFileAttributeView("unix")
             //todo 先不做操作系统适配
-            Long dev =(Long) Files.getAttribute(file.toPath(), "unix:dev");
-            Long ino =(Long) Files.getAttribute(file.toPath(), "unix:ino");
-            Integer mode =(Integer) Files.getAttribute(file.toPath(), "unix:mode");
-            Integer uid = (Integer)Files.getAttribute(file.toPath(), "unix:uid");
+            Long dev = (Long) Files.getAttribute(file.toPath(), "unix:dev");
+            Long ino = (Long) Files.getAttribute(file.toPath(), "unix:ino");
+            Integer mode = (Integer) Files.getAttribute(file.toPath(), "unix:mode");
+            Integer uid = (Integer) Files.getAttribute(file.toPath(), "unix:uid");
             Integer gid = (Integer) Files.getAttribute(file.toPath(), "unix:gid");
-            Long size = (Long)Files.getAttribute(file.toPath(), "unix:size");
+            Long size = (Long) Files.getAttribute(file.toPath(), "unix:size");
             PosixFileAttributes posix = Files.readAttributes(Paths.get(file.getAbsolutePath()), PosixFileAttributes.class);
             ModifierFile mf = new ModifierFile();
             mf.setCtime(posix.creationTime().toMillis());
@@ -138,7 +143,7 @@ public class UpdateCache {
             String fingerprint = FingerprintUtils.calcFileFingerprint(file, FingerprintUtils.SHA1);
             mf.setSha1(fingerprint);
         }
-        modifierFiles.forEach(e -> System.out.println(e.toString()));
+//        modifierFiles.forEach(e -> System.out.println(e.toString()));
         return modifierFiles;
     }
 
@@ -149,7 +154,7 @@ public class UpdateCache {
             raf.read(signature);
             int version = raf.readInt();// 版本号
             int entries = raf.readInt();
-            System.out.println(String.format("signature:%s version:%d entries:%d ", new String(signature), version, entries));
+            FlowPrint.println("=", String.format("signature:%s version:%d entries:%d ", new String(signature), version, entries));
             raf.skipBytes(20);
             int i = 0;
             while (true) {
@@ -178,7 +183,6 @@ public class UpdateCache {
 
     public static void main(String[] args) throws Exception {
         List<ModifierFile> modifierFiles = productModifierFile("/media/lame/0DD80F300DD80F30/code/hatake-git");
-        System.out.println(modifierFiles.size());
         writeIndex(modifierFiles);
         readIndex();
     }
