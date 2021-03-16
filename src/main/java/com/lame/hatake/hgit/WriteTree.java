@@ -4,6 +4,7 @@ import com.lame.hatake.hgit.utils.FingerprintUtils;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class WriteTree {
                 mf.mode = raf.readInt();
                 raf.skipBytes(16);
                 byte[] sha1 = new byte[20];
+                raf.read(sha1);
                 mf.sha1 = sha1;
                 mf.namelen = raf.readShort();
                 byte[] nb = new byte[mf.namelen];

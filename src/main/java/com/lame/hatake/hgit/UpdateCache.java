@@ -136,7 +136,8 @@ public class UpdateCache {
             mf.setGid(gid);
             mf.setSize(size);
             mf.setName(file.getAbsolutePath()); // 存储文件的相对路径相对当前执行路径的
-            mf.setNamelen((short) file.getAbsolutePath().length());
+
+            mf.setNamelen((short) file.getAbsolutePath().getBytes(StandardCharsets.UTF_8).length);
             modifierFiles.add(mf);
             String fingerprint = FingerprintUtils.calcFileFingerprint(file, FingerprintUtils.SHA1);
             mf.setSha1(fingerprint);
